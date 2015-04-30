@@ -15,7 +15,7 @@ def generate_powerlines( conn, conn2 ):
         print row
         cur2 = conn.cursor()
 
-        cur2.execute("SELECT way from planet_osm_point WHERE osm_id = %s LIMIT 1;", [row[0]])
+        cur2.execute("SELECT ST_Transform(way, 4326) from planet_osm_point WHERE osm_id = %s LIMIT 1;", [row[0]])
         transformer = cur2.fetchone()
 
         cur2.execute("Select ST_Transform(ST_Centroid(way), 4326) as cent_way from planet_osm_polygon where not "
