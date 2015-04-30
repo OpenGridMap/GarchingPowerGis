@@ -15,7 +15,7 @@ def generate_powerlines( conn, conn2 ):
         print row
         cur2 = conn.cursor()
 
-        cur2.execute("SELECT ST_Transform(way, 4326) from planet_osm_point WHERE osm_id = %s LIMIT 1;", [row[0]])
+        cur2.execute("SELECT way, ST_Transform(way, 4326) as trans_way from planet_osm_point WHERE osm_id = %s LIMIT 1;", [row[0]])
         transformer = cur2.fetchone()
 
         cur2.execute("Select ST_Transform(ST_Centroid(way), 4326) as cent_way from planet_osm_polygon where not "
@@ -25,11 +25,11 @@ def generate_powerlines( conn, conn2 ):
         for row2 in cur2:
             cur3.execute("SELECT ST_Transform( (SELECT ST_MakeLine(route.geom) FROM ( SELECT geom FROM pgr_fromAtoB("
                          "'ways', ST_X(%s),ST_Y(%s),ST_X(%s),ST_Y(%s) ) ORDER BY seq) AS route), 900913);",
-                         [transformer, transformer, row2[0], row2[0]])
+                         [transformer[1], transformer[1], row2[0], row2[0]])
 
             route = cur3.fetchone()
             print route
-            cur4.execute("INSERT INTO dijkstra_powerlines (osm_id,power,way) VALUES (%s, 'line', %s);", [row[0], route[0]])
+            cur4.execute("INSERT INTO dijkstra_powerlines (osm_id,power,way) VALUES (%s, 'line', ST_AddPoint(%s, %s, 0));", [row[0], route[0], transformer[0]])
 
     conn.commit()
 
