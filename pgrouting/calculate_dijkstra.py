@@ -19,20 +19,19 @@ def generate_powerlines( conn, conn2 ):
         #cur2.execute("SELECT way, ST_Transform(way, 4326) as trans_way from planet_osm_point WHERE osm_id = %s LIMIT 1;", [row[0]])
         #transformer = cur2.fetchone()
 
-        # cent_way = the middle of the houses transformed to projection 4326
+        # cent_way = the middle of the houses
         # select all houses in one voronoi polygon
-        cur2.execute("Select ST_Transform(ST_Centroid(way), 4326) as cent_way from planet_osm_polygon where not "
-                      "building = '' and ST_Within(ST_Centroid(way), %s);", [transformer[1]])
+        cur2.execute("Select ST_Centroid(way) as cent_way, ST_Transform(ST_Centroid(way), 4326) from planet_osm_polygon where not building = '' and ST_Within(ST_Centroid(way), %s);", [transformer[1]])
         cur3 = conn2.cursor()
         cur4 = conn.cursor()
         for house in cur2:
             cur3.execute("SELECT ST_Transform( (SELECT ST_MakeLine(route.geom) FROM ( SELECT geom FROM pgr_fromAtoB("
                          "'ways', ST_X(%s),ST_Y(%s),ST_X(%s),ST_Y(%s) ) ORDER BY seq) AS route), 900913);",
-                         [transformer[2], transformer[2], house[0], house[0]])
+                         [transformer[2], transformer[2], house[1], house[1]])
 
             route = cur3.fetchone()
             #print route
-            cur4.execute("INSERT INTO dijkstra_powerlines (osm_id,power,way) VALUES (%s, 'line', ST_AddPoint(%s, %s, 0));", [transformer[0], route[0], transformer[3]])
+            cur4.execute("INSERT INTO dijkstra_powerlines (osm_id,power,way) VALUES (%s, 'line', ST_AddPoint( ST_AddPoint(%s, %s, 0), %s));", [transformer[0], route[0], transformer[3], house[0]])
 
             sys.stdout.write('.')
             sys.stdout.flush()
