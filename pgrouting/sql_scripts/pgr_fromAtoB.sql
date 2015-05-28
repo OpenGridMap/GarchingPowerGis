@@ -29,12 +29,12 @@ BEGIN
 	EXECUTE 'SELECT id::integer FROM ways_vertices_pgr
 			ORDER BY the_geom <-> ST_GeometryFromText(''POINT('
 			|| x1 || ' ' || y1 || ')'',4326) LIMIT 1' INTO rec;
-	source := rec.id;
+	source := rec.id; -- starting point as id
 
 	EXECUTE 'SELECT id::integer FROM ways_vertices_pgr
 			ORDER BY the_geom <-> ST_GeometryFromText(''POINT('
 			|| x2 || ' ' || y2 || ')'',4326) LIMIT 1' INTO rec;
-	target := rec.id;
+	target := rec.id; -- ending point as id
 
 	-- Shortest path query (TODO: limit extent by BBOX)
         seq := 0;
